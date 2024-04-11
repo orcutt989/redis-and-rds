@@ -25,6 +25,9 @@ const vpc = new awsx.ec2.Vpc(`${ownerTag}-vpc`, {
 });
 
 // Define the role mappings for the EKS cluster
+// Opened up to all authenticated accounts for simplicity
+// As to not worry about role-based authentication
+// although that is best-practice.
 const roleMappings: eks.RoleMapping[] = [{
   roleArn: "*",
   username: "*",
@@ -52,10 +55,10 @@ const redisService = new k8s.core.v1.Service("redis-service", {
     namespace: "default"
   },
   spec: {
-    type: "ClusterIP",
+    type: "ClusterIP", // Only accessible inside the cluster. Redis doesnt need outside access.
     ports: [{
       port: redisPort,
-      targetPort: "redis",
+      targetPort: "redis", // Named port matches named port in deployment
     }],
     selector: {
       app: "redis"
@@ -93,7 +96,7 @@ const redisDeployment = new k8s.apps.v1.Deployment("redis-deployment", {
           name: "redis",
           image: "redis",
           ports: [{
-            name: "redis",
+            name: "redis", // Named port matches named port in service
             containerPort: 6379
           }],
           env: [{
@@ -103,8 +106,8 @@ const redisDeployment = new k8s.apps.v1.Deployment("redis-deployment", {
             name: "REDIS_HOST",
             value: "0.0.0.0"
           }],
-          command: ["redis-server"], // Specify the command to run Redis
-          args: ["--bind", "0.0.0.0"], // Specify the bind address
+          command: ["redis-server"],
+          args: ["--bind", "0.0.0.0"],
         }],
       },
     },
@@ -161,7 +164,7 @@ const webAppService = new k8s.core.v1.Service("webapp-service", {
     namespace: "default"
   },
   spec: {
-    type: "LoadBalancer",
+    type: "LoadBalancer", // Accessible via AWS ELB URL on the internet
     ports: [{
       port: 80,
       targetPort: 4567
@@ -180,7 +183,7 @@ const webAppService = new k8s.core.v1.Service("webapp-service", {
 // Create the RDS database instance using the createRDS function
 export function createRDS() {
 
-  // Cant have uppercase leters in RDS and subnet names.
+  // Cant have uppercase letters in RDS and subnet names.
   const rdsName = `${ownerTag!.toLowerCase()}-rds-instance`.toLowerCase().replace(/[^a-z0-9-]+/g, "");
 
   // Create a subnet group for the RDS instance
@@ -203,12 +206,7 @@ export function createRDS() {
   // And denies from everywhere else
   const dbSecurityGroup = new aws.ec2.SecurityGroup(`${ownerTag}-db-security-group`, {
     vpcId: vpc.vpcId,
-    ingress: [    {
-      protocol: "-1", // -1 means all protocols
-      fromPort: 0,
-      toPort: 0,
-      cidrBlocks: ["0.0.0.0/0"], // Deny from all sources
-    },{
+    ingress: [{ //Absence of any other rules means all inbound traffic is denied
       protocol: "tcp",
       fromPort: 3306,
       toPort: 3306,
@@ -237,10 +235,10 @@ export function createRDS() {
     engine: "mysql",
     engineVersion: "8.0",
     instanceClass: "db.t3.micro",
-    dbName: `${ownerTag}RDS`,
+    dbName: `${ownerTag}RDS`, // dbName can only be alpah numeric characters
     identifier: rdsName,
     username: "admin",
-    password: cfg.requireSecret("rdspassword"),
+    password: cfg.requireSecret("rdspassword"), // TODO generate and store this without human intervention
     skipFinalSnapshot: true,
     vpcSecurityGroupIds: [dbSecurityGroup.id],
     dbSubnetGroupName: dbSubnetGroup.name, // Use the subnet group created above
