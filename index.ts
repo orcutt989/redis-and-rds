@@ -3,6 +3,7 @@ import * as awsx from "@pulumi/awsx";
 import * as eks from "@pulumi/eks";
 import * as k8s from "@pulumi/kubernetes";
 import * as aws from "@pulumi/aws";
+//import * as mysql from "mysql"; // Used for DB test if implemented
 
 // Read the ownerTag from environment variables
 const ownerTag = process.env.OWNER_TAG;
@@ -180,6 +181,8 @@ const webAppService = new k8s.core.v1.Service("webapp-service", {
   }
 });
 
+const cfg = new pulumi.Config();
+
 // Create the RDS database instance using the createRDS function
 export function createRDS() {
 
@@ -198,7 +201,9 @@ export function createRDS() {
   // Get the CIDR blocks of the public subnets
   const publicSubnetCidrBlocks = pulumi.output(vpc.publicSubnetIds).apply(subnetIds =>
     subnetIds.map(subnetId =>
-      aws.ec2.getSubnet({ id: subnetId }).then(subnet => subnet.cidrBlock ?? "")
+      aws.ec2.getSubnet({
+        id: subnetId
+      }).then(subnet => subnet.cidrBlock ?? "")
     )
   );
 
@@ -218,8 +223,6 @@ export function createRDS() {
     },
   });
 
-  const cfg = new pulumi.Config();
-
   // TODO generate and store password as a secret for RDS
   // const rdsPassword = new random.RandomPassword("rdsPassword", {
   //   length: 16, // Adjust the length as needed
@@ -228,7 +231,7 @@ export function createRDS() {
 
   // // Store the generated password in the Pulumi configuration
   // cfg.requireSecret("rdspassword", rdsPassword.result);
-  
+
   // Create the RDS database instance
   const rdsInstance = new aws.rds.Instance(`${ownerTag}-rds-instance`, {
     allocatedStorage: 20,
@@ -246,6 +249,54 @@ export function createRDS() {
       "Owner": ownerTag!
     },
   });
+
+  // Define the Lambda IAM role
+  const lambdaRole = new aws.iam.Role("lambdaRole", {
+    assumeRolePolicy: JSON.stringify({
+      Version: "2012-10-17",
+      Statement: [{
+        Action: "sts:AssumeRole",
+        Effect: "Allow",
+        Principal: {
+          Service: "lambda.amazonaws.com",
+        },
+      }],
+    }),
+  });
+
+  // // TODO Lambda checks for db connection from internet and fails if it is
+  // new aws.iam.RolePolicyAttachment("lambdaRolePolicyAttachment", {
+  //   role: lambdaRole,
+  //   policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
+  // });
+
+  // rdsInstance.endpoint.apply(endpoint => {
+  //   rdsInstance.password.apply(password => {
+  //     // Lambda function that attempts to connect to the RDS instance
+  //     const lambdaFunction = new aws.lambda.CallbackFunction("checkDbConnection", {
+  //       role: lambdaRole,
+  //       callback: async () => {
+  //         const connection = mysql.createConnection({
+  //           host: endpoint,
+  //           user: "admin",
+  //           password: password,
+  //         });
+
+  //         connection.connect((err) => {
+  //           if (err) {
+  //             console.error("Error connecting to the database: ", err);
+  //             return;
+  //           }
+
+  //           // If connection is successful, throw an error to fail the Pulumi deployment
+  //           throw new Error("Database connection was successful, which is not expected.");
+  //         });
+
+  //         connection.end();
+  //       },
+  //     });
+  //   });
+  // })
 
   return rdsInstance;
 }

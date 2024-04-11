@@ -4,6 +4,7 @@
     "devDependencies": {
         "@pulumi/pulumi": "^3.112.0",
         "@types/jest": "^29.5.12",
+        "@types/mysql": "^2.15.26",
         "@types/node": "^18",
         "aws-sdk": "^2.1597.0",
         "chai": "^5.1.0",
@@ -14,7 +15,9 @@
     "dependencies": {
         "@pulumi/aws": "^6.0.0",
         "@pulumi/awsx": "^2.6.0",
-        "@pulumi/eks": "^2.3.0"
+        "@pulumi/eks": "^2.3.0",
+        "mysql": "^2.18.1",
+        "mysql2": "^3.9.4"
     },
     "scripts": {
         "test": "jest --config jest.config.js"
