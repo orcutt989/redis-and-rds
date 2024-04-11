@@ -1,0 +1,22 @@
+{
+    "name": "redis-and-rds",
+    "main": "index.ts",
+    "devDependencies": {
+        "@pulumi/pulumi": "^3.112.0",
+        "@types/jest": "^29.5.12",
+        "@types/node": "^18",
+        "aws-sdk": "^2.1597.0",
+        "chai": "^5.1.0",
+        "jest": "^29.7.0",
+        "sinon": "^17.0.1",
+        "ts-jest": "^29.1.2"
+    },
+    "dependencies": {
+        "@pulumi/aws": "^6.0.0",
+        "@pulumi/awsx": "^2.6.0",
+        "@pulumi/eks": "^2.3.0"
+    },
+    "scripts": {
+        "test": "jest --config jest.config.js"
+    }
+}

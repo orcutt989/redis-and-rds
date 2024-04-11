@@ -1,0 +1,4 @@
+encryptionsalt: v1:BCU8wtkmVJ4=:v1:/8bN4iMncnSEpzwb:F/iw3K7juVY5X5uGitIuK3S0CKYrpQ==
+config:
+  redis-and-rds:rdspassword:
+    secure: v1:/JziguECYAhxPLBJ:fytgdZiDZXVvREJUky3ug4aEOdmBWb4EQ9D7MEcWtw==
