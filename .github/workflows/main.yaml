@@ -20,7 +20,6 @@ jobs:
       - name: Installing dependencies 📦️
         run: npm install
 
-
       - name: Applying infrastructure 🚀
         uses: pulumi/actions@v4
         with:
@@ -33,3 +32,4 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           WEB_APP_IMAGE: ${{ secrets.WEB_APP_IMAGE }}
           OWNER_TAG: ${{ secrets.OWNER_TAG }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
